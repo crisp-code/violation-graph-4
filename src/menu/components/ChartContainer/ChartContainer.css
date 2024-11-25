@@ -1,0 +1,33 @@
+.container {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+}
+
+.content-wrapper {
+  width: calc(100% - 40px);
+  height: calc(100% - 78px);
+  margin-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.chart-section {
+  height: 100%;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 5px;
+  transition: all 0.3s ease;
+}
+
+.list-section {
+  width: 100%;
+  height: 100%;
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+  overflow-y: auto;
+}

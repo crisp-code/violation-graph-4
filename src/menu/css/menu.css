@@ -1,0 +1,273 @@
+.menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  display: flex;                    /* 가로 정렬 설정 */
+  flex-direction: row;              /* 가로 방향으로 정렬 */
+  z-index: 1000; 
+  justify-content: center;          /* 가로 가운데 정렬 */
+}
+
+.left_menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 30%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: white;        /* 연한 회색 배경 */
+  color: #000;                    /* 검은색 텍스트 */
+  transition: transform 0.3s ease;
+  z-index: 1000;                    /* 사이드바를 맨 위에 배치 */
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+.left_menu_closed {
+  transform: translateX(-100%);
+}
+.left_menu_btn {
+  width: 20px;
+  height: 70px;
+  position: absolute;
+  right: -20px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid #f0f0f0;     /* 연한 회색 테두리 */
+  background-color: white;       /* 중간 회색 배경 */
+  border-left: none;               /* 왼쪽 테두리 제거 */
+  cursor: pointer;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  padding-left: 5px;
+  padding-right: 8px;
+  border-radius: 0 8px 8px 0;
+  box-shadow: 0 2px 4px #f0f0f0(0, 0, 0, 0.1); /* 그림자 추가 */
+}
+.left_menu_btn:hover {
+  background-color: #f0f0f0;
+}
+.arrow {                           /* 화살표 스타일 */
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 6px solid #70757a; 
+}
+.arrow.open {
+  transform: rotate(180deg); 
+}
+
+.today_persent {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  margin-left: 5px;
+  margin-right: 5px;
+  background-color: gray;
+  border: 2px solid #D3D3D3;    /* 테두리 색상 */
+}
+.marker-100 {
+  background-color: #FF0000;
+}
+.marker-75 {
+  background-color: #FF7F00;
+}
+.marker-50 {
+  background-color: #FFFF00;
+}
+.marker-25 {
+  background-color: #008000;
+}
+
+.cctv_box {
+  width: 100%;
+  height: 40%;
+  background-color: black;
+}
+
+.left_menu_top{
+  width: 100%;
+  height: 10%;
+  border-right: 1px solid #dadce0;
+  border-left: 1px solid #dadce0;
+  display: flex;
+  justify-content: center;            /* 세로 정렬 */
+  align-items: center;                /* 가로 정렬 */
+  flex-direction: column;             /* 아이템을 세로로 배치 */
+}
+.safety-info-container {
+  width: 100%;
+  text-align: center;
+}
+.safety-table {
+  width: 100%;    
+  display: flex;
+}
+.safety-row_address {
+  width: 70%;
+  display: flex;
+  justify-content: center;
+}
+.safety-label_address {
+  width: 70px;
+  font-weight: bold;
+}
+.safety-value_address {
+  border: 0px solid #de0a0a;
+}
+.safety-row_percent {
+  width: 30%;
+  display: flex;
+  justify-content: center;
+}
+.safety-label_percent {
+  width: 70px;
+  font-weight: bold;
+}
+.safety-value_percent {
+  border: 0px solid #de0a0a;
+}
+
+.left_menu_mid{
+  width: 100%;
+  height: 50%;
+  border-right: 1px solid #dadce0;
+  border-left: 1px solid #dadce0;
+}
+
+.mid_menu {
+  width: 30%;
+  position: absolute;
+  top: 0;
+  left: 30%;
+}
+.search_menu{
+  margin-top: 12px;
+  z-index: 2000;                  /* z-index 값 다른 요소 위에 표시 */
+  width: 100%;
+  display: flex;
+  justify-content: center;         /* 가로 중앙 정렬 */
+}
+.search_box {
+  width: calc(100% - 40px);
+  align-items: center;
+  border: 1px solid #eeeded;
+  background-color: #ffffff;
+  border-radius: 25px;             /* 모서리 둥글게 */
+  z-index: 2000;                  /* z-index 값 다른 요소 위에 표시 */
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* 그림자 추가 */
+  overflow: hidden;  
+}
+.search_bar {
+  height: 50px;
+  border: none;
+  display: flex;
+  margin-left: 20px;
+  width: calc(100% - 20px);
+}
+.search_window {
+  width: 100%;
+  border: none;
+}
+.search_window:focus {
+  outline: none;                  /* 기본 포커스 아웃라인 제거 */
+}
+.search_window:focus::placeholder {
+  color: transparent;
+}
+.search_bnt {
+  width: 25px;
+  height: 25px;
+  border: none; 
+  background-color: #ffffff;    /* 흰색 배경 */
+  color: #70757a;               /* 텍스트와 아이콘을 보라색으로 */
+  margin: 10px 15px;
+  cursor: pointer;
+  position: relative;             /* 아이콘 위치를 위한 설정 */
+}
+.search_bnt::before {             /* 돋보기 동그라미 */
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #70757a;
+  border-radius: 50%;
+  top: 47%;
+  left: 5px;
+  transform: translateY(-50%);
+  box-sizing: border-box;
+}
+.search_bnt::after {              /* 돋보기 손잡이 */
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 2px;
+  background-color: #70757a;
+  top: 66%;
+  left: 17px;
+  transform: translateY(-50%) rotate(45deg);
+  transform-origin: left center;
+}
+.search_data_box {
+  border-top: 1px solid #eeeded;
+}
+.search_results_box {
+  list-style-type: none;          /* 불릿 포인트 제거 */
+  padding: 0;            
+  margin: 0;        
+}
+.search_result{
+  display: flex;
+  padding: 10px;
+  align-items: center;            /* 세로 가운데 정렬 */
+}
+.search_result:hover{
+  background-color: #e2e2e2;
+  cursor: pointer;                /* 마우스를 손가락 모양으로 변경 */
+}
+
+.right_menu {
+  position: absolute;
+  top: 0;
+  left: 60%;
+  width: 40%;
+  display: flex;                      /* 가로 정렬 설정 */
+  flex-direction: column;             /* 아이템을 세로로 배치 */
+  align-items: center;                /* 가로 정렬 */
+}
+.color-bar-container {
+  position: relative;
+  display: flex;
+  width: 65%;
+  border: 1px solid black;
+  overflow: hidden;
+}
+.color-bar-segment {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+.color-bar-label {
+  color: #000;
+  font-weight: bold;
+}
+.color-bar-labels {
+  margin-top: 10px;
+  position: absolute;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: bold;
+}
+.color-bar-safe {
+  margin-right: 15%;
+  margin-top: 5%;
+}
+.color-bar-danger {
+  margin-left: 15%;
+  margin-top: 5%;
+}
