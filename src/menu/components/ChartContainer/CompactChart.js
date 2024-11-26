@@ -5,7 +5,7 @@ const aggregateDataByTwoWeeks = (data) => {
   const result = [];
   let currentDate = new Date('2023-12-27');  // 시작일
   const endDate = new Date('2025-02-28');    // 종료일
-  const transitionDate = new Date('2024-11-21'); // 전환 시점
+  const transitionDate = new Date('2024-11-28'); // 전환 시점을 11월 4주로 변경
 
   const getPeriodicData = (start, end, data) => {
     return data.filter(item => {
@@ -14,7 +14,23 @@ const aggregateDataByTwoWeeks = (data) => {
     });
   };
 
-  let lastActualValue = null;
+  // 전환 시점 이전의 마지막 4주 데이터의 평균을 계산
+  const getTransitionValue = (data) => {
+    const lastMonthData = data.filter(item => {
+      const itemDate = new Date(item.date);
+      const oneMonthBefore = new Date(transitionDate);
+      oneMonthBefore.setMonth(oneMonthBefore.getMonth() - 1);
+      return itemDate >= oneMonthBefore && itemDate < transitionDate;
+    });
+    
+    if (lastMonthData.length > 0) {
+      const sum = lastMonthData.reduce((acc, item) => acc + (item.actual || 0), 0);
+      return Math.round(sum / lastMonthData.length);
+    }
+    return 50; // 기본값 설정
+  };
+
+  const transitionValue = getTransitionValue(data);
 
   while (currentDate <= endDate) {
     const twoWeeksLater = new Date(currentDate);
@@ -28,12 +44,10 @@ const aggregateDataByTwoWeeks = (data) => {
 
       // 전환 시점 처리
       if (currentDate <= transitionDate && twoWeeksLater > transitionDate) {
-        // 전환 시점의 값 저장
-        lastActualValue = Math.round(avgActual);
         result.push({
           date: currentDate.toISOString().split('T')[0],
-          actual: lastActualValue,
-          predicted: lastActualValue // 전환 시점에서 동일한 값 사용
+          actual: transitionValue,
+          predicted: transitionValue
         });
       } else {
         result.push({
@@ -49,6 +63,14 @@ const aggregateDataByTwoWeeks = (data) => {
   return result;
 };
 
+const formatDate = (dateStr) => {
+  const date = new Date(dateStr);
+  const year = date.getFullYear().toString().slice(2);
+  const month = date.getMonth() + 1;
+  const weekNum = Math.ceil(date.getDate() / 7);
+  return `${year}년 ${month}월 ${weekNum}주`;
+};
+
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length > 0) {
     const validPayload = payload.find(p => p.value !== null);
@@ -62,7 +84,7 @@ const CustomTooltip = ({ active, payload, label }) => {
         borderRadius: '4px',
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
-        <p style={{ margin: '0 0 5px 0' }}>{new Date(label).toLocaleDateString()}</p>
+        <p style={{ margin: '0 0 5px 0' }}>{formatDate(label)}</p>
         {payload.map((p, i) => (
           p.value !== null && (
             <p key={i} style={{ 
@@ -84,7 +106,11 @@ const CompactChart = ({ data }) => (
   <ResponsiveContainer width="100%" height={30}>
     <AreaChart data={aggregateDataByTwoWeeks(data)} margin={{ top: 2, right: 20, left: 20, bottom: 2 }}>
       <CartesianGrid strokeDasharray="3 3" />
-      <XAxis dataKey="date" tickFormatter={(date) => new Date(date).toLocaleDateString()} hide />
+      <XAxis 
+        dataKey="date" 
+        tickFormatter={formatDate} 
+        hide 
+      />
       <YAxis hide />
       <Tooltip content={<CustomTooltip />} />
       <Area 
