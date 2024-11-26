@@ -8,6 +8,8 @@ function GetCCTVImg({ cctvName, imgName }) {
     useEffect(() => {
         if (!imgName) return;
 
+        let currentUrl = null;
+
         const fetchImage = async () => {
             setLoading(true);
             setError(null);
@@ -18,8 +20,8 @@ function GetCCTVImg({ cctvName, imgName }) {
                     throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 const blob = await response.blob();
-                const url = URL.createObjectURL(blob);
-                setImgURL(url);
+                currentUrl = URL.createObjectURL(blob);
+                setImgURL(currentUrl);
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -30,11 +32,11 @@ function GetCCTVImg({ cctvName, imgName }) {
         fetchImage();
 
         return () => {
-            if (imgURL) {
-                URL.revokeObjectURL(imgURL);
+            if (currentUrl) {
+                URL.revokeObjectURL(currentUrl);
             }
         };
-    }, [imgName]);
+    }, [imgName, cctvName]);
 
     return { imgURL, loading, error };
 }
