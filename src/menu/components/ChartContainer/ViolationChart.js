@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Group } from '@visx/group';
 import { LinePath } from '@visx/shape';
 import { scaleTime, scaleLinear } from '@visx/scale';
@@ -28,15 +28,61 @@ const tooltipStyles = {
   whiteSpace: 'nowrap'
 };
 
-const ViolationChart = ({ data }) => {
+const normalizeViolationData = (csv) => {
+  // 1. 날짜별 총 위반 건수 계산
+  const dailyViolations = csv
+    .trim()
+    .split('\n')
+    .slice(1)
+    .map(line => {
+      const [date, , , violationCount] = line.split(',');
+      return { date, violationCount: parseInt(violationCount, 10) };
+    })
+    .reduce((acc, { date, violationCount }) => {
+      acc[date] = (acc[date] || 0) + violationCount;
+      return acc;
+    }, {});
+
+  // 2. 최대 위반 건수 찾기
+  const maxViolation = Math.max(...Object.values(dailyViolations));
+  
+  // 3. 최대값이 100이 되도록 스케일 계산
+  const scale = 100 / maxViolation;
+
+  // 4. 모든 값을 스케일에 맞춰 조정
+  const normalizedData = Object.entries(dailyViolations).map(([date, count]) => ({
+    date,
+    violationCount: Math.round(count * scale)  // 비율을 곱해서 최대값이 100이 되도록 조정
+  }));
+
+  return normalizedData;
+};
+
+const ViolationChart = () => {
   const [dimensions, setDimensions] = useState({ width: 700, height: 350 });
   const [tooltipData, setTooltipData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [formattedData, setFormattedData] = useState({ actual: [], predicted: [] });
+  const [data, setData] = useState([]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const response = await fetch('/data/cctv_violation_data_20231115_to_20251115_dataset_1.csv');
+      const csvText = await response.text();
+      const normalizedData = normalizeViolationData(csvText);
+      setData(normalizedData);
+    } catch (error) {
+      console.error('Error fetching CSV data:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   // 데이터 분리
   useEffect(() => {
-    if (data) {
+    if (data.length > 0) {
       const cutoffDate = new Date('2024-11-21');
       const actual = [];
       const predicted = [];
@@ -207,7 +253,7 @@ ViolationChart.propTypes = {
   data: PropTypes.arrayOf(PropTypes.shape({
     date: PropTypes.string.isRequired,
     violationCount: PropTypes.number.isRequired
-  })).isRequired
+  }))
 };
 
 export default ViolationChart;
