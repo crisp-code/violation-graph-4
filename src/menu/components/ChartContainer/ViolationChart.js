@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Group } from '@visx/group';
-import { LinePath } from '@visx/shape';
+import { AreaClosed } from '@visx/shape';
 import { scaleTime, scaleLinear } from '@visx/scale';
 import { AxisLeft, AxisBottom } from '@visx/axis';
 import { curveNatural } from '@visx/curve';
@@ -13,7 +13,7 @@ import PropTypes from 'prop-types';
 const LoadingMessage = () => <p>로딩 중...</p>;
 const NoDataMessage = () => <p>데이터가 없습니다.</p>;
 
-const margin = { top: 40, right: 30, bottom: 50, left: 50 };
+const margin = { top: 20, right: 20, bottom: 50, left: 40 };
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length > 0) {
@@ -28,27 +28,24 @@ const CustomTooltip = ({ active, payload, label }) => {
     return (
       <div style={{ 
         backgroundColor: 'white',
-        padding: '8px 12px',
+        padding: '10px',
         border: '1px solid #ccc',
         borderRadius: '4px',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-        minWidth: '200px',
-        fontSize: '14px'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+        minWidth: '200px'
       }}>
-        <div style={{ 
-          marginBottom: '6px',
-          color: '#333',
-          fontWeight: '500'
-        }}>
-          {`${year}년 ${month}월 ${weekNum}주`}
-        </div>
-        <div style={{ 
-          color: payload[0].payload.isActual ? '#1f77b4' : '#ff7f0e',
-          fontWeight: '500',
-          fontSize: '14px'
-        }}>
-          {`${payload[0].payload.isActual ? '실제 위반 건수' : '예측 위반 건수'}: ${payload[0].value}건`}
-        </div>
+        <p style={{ margin: '0 0 5px 0' }}>{`${year}년 ${month}월 ${weekNum}주`}</p>
+        {payload.map((p, i) => (
+          p.value !== null && (
+            <p key={i} style={{ 
+              margin: '3px 0',
+              color: p.dataKey === 'actual' ? '#1f77b4' : '#ff7f0e',
+              fontWeight: 'bold'
+            }}>
+              {p.dataKey === 'actual' ? '실제 위반 건수' : '예측 위반 건수'}: {Math.round(p.value)}건
+            </p>
+          )
+        ))}
       </div>
     );
   }
@@ -70,44 +67,41 @@ const normalizeViolationData = (csv) => {
       return acc;
     }, {});
 
-  // 2. 2주 단위로 데이터 집계
-  const biweeklyViolations = {};
+  // 2. 월 단위로 데이터 집계
+  const monthlyViolations = {};
   Object.entries(dailyViolations).forEach(([date, count]) => {
     const currentDate = new Date(date);
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
-    const weekNum = Math.ceil(currentDate.getDate() / 7);
-    // 2주 단위로 그룹화 (1,2주차 -> 1, 3,4주차 -> 2)
-    const biweekNum = Math.ceil(weekNum / 2);
-    const biweekKey = `${year}-${month.toString().padStart(2, '0')}-${biweekNum}번째 2주`;
+    const monthKey = `${year}-${month.toString().padStart(2, '0')}`;
     
-    if (!biweeklyViolations[biweekKey]) {
-      biweeklyViolations[biweekKey] = {
+    if (!monthlyViolations[monthKey]) {
+      monthlyViolations[monthKey] = {
         count: 0,
         dates: []
       };
     }
-    biweeklyViolations[biweekKey].count += count;
-    biweeklyViolations[biweekKey].dates.push(date);
+    monthlyViolations[monthKey].count += count;
+    monthlyViolations[monthKey].dates.push(date);
   });
 
   // 3. 최대/최소 위반 건수 찾기
-  const counts = Object.values(biweeklyViolations).map(v => v.count);
+  const counts = Object.values(monthlyViolations).map(v => v.count);
   const maxViolation = Math.max(...counts);
   const minViolation = Math.min(...counts);
   
   // 4. 편차를 줄이기 위한 스케일 계산 수정
-  // 최소값을 20으로, 최대값을 80으로 조정
   const scale = (80 - 20) / (maxViolation - minViolation);
   const normalize = (value) => {
-    return 20 + (value - minViolation) * scale;
+    const normalized = 20 + (value - minViolation) * scale;
+    return Math.max(30, normalized);
   };
 
   // 5. 모든 값을 새로운 스케일에 맞춰 조정하고 날짜 정렬
-  const normalizedData = Object.entries(biweeklyViolations)
-    .map(([biweekKey, data]) => ({
-      date: data.dates[0],
-      weekLabel: biweekKey,
+  const normalizedData = Object.entries(monthlyViolations)
+    .map(([monthKey, data]) => ({
+      date: data.dates[0], // 해당 월의 첫 날짜 사용
+      monthLabel: monthKey,
       violationCount: Math.round(normalize(data.count))
     }))
     .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -145,30 +139,30 @@ const ViolationChart = () => {
       const actual = [];
       const predicted = [];
 
-      // 마지막 실제 데이터와 첫 예측 데이터 찾기
-      let lastActualData = null;
-      let firstPredictedData = null;
-
       data.forEach(item => {
         const date = new Date(item.date);
-        if (date <= cutoffDate) {
-          actual.push(item);
-          lastActualData = item;
-        } else if (date <= endDate) {
-          if (!firstPredictedData) {
-            firstPredictedData = item;
+        if (date >= new Date('2023-12-15')) {
+          if (date <= cutoffDate) {
+            actual.push(item);
+          } else if (date <= endDate) {
+            predicted.push(item);
           }
-          predicted.push(item);
         }
       });
 
-      // 전환 지점 데이터 추가
-      if (lastActualData && firstPredictedData) {
-        // 마지막 실제 데이터를 예측 데이터에도 추가
-        predicted.unshift({
-          ...lastActualData,
-          date: cutoffDate.toISOString().split('T')[0]
-        });
+      // 연결 지점 처리
+      if (actual.length > 0) {
+        const lastActualValue = actual[actual.length - 1].violationCount;
+        const transitionPoint = {
+          date: cutoffDate.toISOString().split('T')[0],
+          violationCount: lastActualValue,
+          monthLabel: `${cutoffDate.getFullYear()}-${(cutoffDate.getMonth() + 1).toString().padStart(2, '0')}`
+        };
+        
+        // 실제 데이터의 마지막에 전환 지점 추가
+        actual.push(transitionPoint);
+        // 예측 데이터의 시작에 전환 지점 추가
+        predicted.unshift(transitionPoint);
       }
 
       setFormattedData({ actual, predicted });
@@ -182,8 +176,8 @@ const ViolationChart = () => {
       const container = document.querySelector('.chart-section');
       if (container) {
         setDimensions({
-          width: container.clientWidth - 30,
-          height: container.clientHeight - 40
+          width: container.clientWidth - 60,
+          height: container.clientHeight - 30
         });
       }
     };
@@ -198,14 +192,14 @@ const ViolationChart = () => {
 
   const xScale = scaleTime({
     domain: [
-      Math.min(...data.map(d => new Date(d.date))),
-      new Date('2025-02-28')  // x축 범위를 2025년 2월까지로 제한
+      new Date('2023-12-15'),  // 시작 날짜를 12월 15일로 조정
+      new Date('2025-02-28')
     ],
     range: [0, width]
   });
 
   const yScale = scaleLinear({
-    domain: [0, Math.max(...data.map(d => d.violationCount))],
+    domain: [30, 80],
     range: [height, 0],
     nice: true
   });
@@ -279,17 +273,18 @@ const ViolationChart = () => {
           <AxisBottom 
             top={height} 
             scale={xScale} 
-            numTicks={6} 
+            numTicks={5}
             tickFormat={d => {
               const date = new Date(d);
+              const year = date.getFullYear().toString().slice(2);
               const month = date.getMonth() + 1;
-              return `${month}월`;  // 월만 표시
+              return `${year}년 ${month}월`;
             }}
             stroke="#a8a8a8"
             tickStroke="#a8a8a8"
             tickLabelProps={() => ({
               fill: '#666',
-              fontSize: 12,
+              fontSize: 11,
               textAnchor: 'middle',
               dy: 8
             })}
@@ -298,38 +293,43 @@ const ViolationChart = () => {
             scale={yScale}
             stroke="#a8a8a8"
             tickStroke="#a8a8a8"
-            numTicks={8}
+            numTicks={5}
             tickLabelProps={() => ({
               fill: '#666',
-              fontSize: 12,
+              fontSize: 11,
               textAnchor: 'end',
-              dx: -8
+              dx: -10,
+              dy: 4
             })}
           />
 
           {/* 실제 데이터 라인 */}
-          <LinePath
+          <AreaClosed
             data={formattedData.actual}
             x={d => xScale(new Date(d.date))}
             y={d => yScale(d.violationCount)}
+            yScale={yScale}
             stroke="#1f77b4"
-            strokeWidth={3}
+            fill="#1f77b4"
+            fillOpacity={0.6}
+            strokeWidth={2}
             curve={curveNatural}
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            base={yScale(30)}
           />
 
           {/* 예측 데이터 라인 */}
-          <LinePath
+          <AreaClosed
             data={formattedData.predicted}
             x={d => xScale(new Date(d.date))}
             y={d => yScale(d.violationCount)}
+            yScale={yScale}
             stroke="#ff7f0e"
-            strokeWidth={3}
+            fill="#ff7f0e"
+            fillOpacity={0.6}
+            strokeWidth={2}
             curve={curveNatural}
-            strokeDasharray="6 6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+            strokeDasharray="4 4"
+            base={yScale(30)}
           />
 
           <rect
@@ -341,23 +341,23 @@ const ViolationChart = () => {
           />
 
           {/* 하단 범례 */}
-          <Group top={height + 40}>
+          <Group top={height + 45}>
             <Group left={width / 2 - 100}>
-              <circle cx={0} cy={0} r={5} fill="#1f77b4" />
+              <circle cx={0} cy={0} r={4} fill="#1f77b4" />
               <text 
-                x={12} 
+                x={10} 
                 y={4} 
-                fontSize={12} 
+                fontSize={11}
                 fill="#666"
                 style={{ fontWeight: '500' }}
               >
                 실제 위반 건수
               </text>
-              <circle cx={100} cy={0} r={5} fill="#ff7f0e" />
+              <circle cx={100} cy={0} r={4} fill="#ff7f0e" />
               <text 
-                x={112} 
+                x={110} 
                 y={4} 
-                fontSize={12}
+                fontSize={11}
                 fill="#666"
                 style={{ fontWeight: '500' }}
               >
